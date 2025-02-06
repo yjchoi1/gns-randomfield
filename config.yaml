@@ -1,0 +1,46 @@
+defaults:
+  - _self_
+  - override hydra/hydra_logging: disabled  
+  - override hydra/job_logging: disabled  
+
+hydra:
+  output_subdir: null  
+  run:
+    dir: .
+
+# Top level config
+n_dims: 2
+n_material_props: 2
+max_cohesion: 100000
+n_samples: 10
+full_mpm_interval: 5
+save_dir: ./data/sims/
+
+# MPM config
+mpm_config:
+  dt: 1e-04
+  initial_position_length: 6
+  n_full_mpm_timesteps: 3000
+  n_first_initial_timesteps: 376
+  output_steps: 375
+
+# GNS config
+gns_config:
+  rigid_material_param: [1.0, 1.0]
+  cohesion_scaling_factor: 1e5
+  kinematic_particle: 6
+  stationary_particle: 3
+  num_particle_types: 9
+  noise_std: 0.01
+  data_path: ./data/gns/
+  model_path: ./data/gns/
+  meta_data: metadata-r60.json
+  model_file: model-4800000.pt
+  nsteps: 2
+  physical_dt: 0.0375
+
+
+
+
+
+

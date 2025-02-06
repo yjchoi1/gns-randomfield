@@ -1,0 +1,8 @@
+[submodule "gns"]
+	path = gns
+	url = https://github.com/yjchoi1/gns-main.git
+	branch = v2-dev-materials-fix-mp
+[submodule "cbgeopy"]
+	path = cbgeopy
+	url = https://github.com/yjchoi1/cbgeopy.git
+	branch = main
