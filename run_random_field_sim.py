@@ -40,7 +40,7 @@ def main(cfg):
     
     results = []
     
-    for i in range(cfg.n_samples):
+    for i in np.arange(0, cfg.n_samples):
         result = {}
         
         # Set simulation directory
@@ -109,6 +109,7 @@ def main(cfg):
         )
         runout_gns, runout_mpm = postprocesser.compute_runout()
         mse = postprocesser.compute_mse()
+        postprocesser.plot_deposit(save_dir=sim_dir, domain=[[0, 200], [0, 80]])
         
         # Save the results
         result["gns"] = {"runout": runout_gns}
