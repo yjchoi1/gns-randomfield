@@ -1,0 +1,9 @@
+*.txt
+*.json
+*.npz
+*.h5
+*.png
+__pycache__/
+.idea/
+debug/
+data/

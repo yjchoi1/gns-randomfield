@@ -16,7 +16,7 @@ def generate_input(save_dir, cfg):
     """
 
     # Set config
-    lx, ly = 200.0, 60.0
+    lx, ly = 200.0, 80.0
     mpm = MPMConfig(domain_origin=[0, 0], domain_length=[lx, ly])
 
     # Mesh
@@ -37,10 +37,10 @@ def generate_input(save_dir, cfg):
 
     # Particles
     # Bedrock
-    mpm.add_particles_from_lines(
-        layer_info=[
+    mpm.add_particles_from_polygon(
+        polygon_info=[
             {
-                "line_points": [[0, 4], [300, 4]],
+                "polygon_points": [[0, 0], [300, 0], [300, 4], [0, 4]],
                 "material_id": 0,
                 "particle_group_id": 0
             }
@@ -48,19 +48,39 @@ def generate_input(save_dir, cfg):
         n_particle_per_cell=2
     )
     # Slope
+    p1 = [0, 4]
+    p2 = [80, 4]
+    p3 = [70, 24]
+    p4 = [0, 24]
+    p5 = [60, 44]
+    p6 = [0, 44]
+
     mpm.add_particles_from_random_field(
         polygons_params=[
             {
-                "polygon_points": [[0, 4], [60, 4], [60, 20], [0, 20]],
-                "random_params": {"mean": 10.0, "std": 2.0, "len_scale": 10.0},
+                "polygon_points": [p1, p2, p3, p4],
+                "random_params": {"mean": 15.0, "std": 3.0, "len_scale": [20, 2]},
             },
             {
-                "polygon_points": [[0, 20], [60, 20], [0, 40]],
-                "random_params": {"mean": 20.0, "std": 2.0, "len_scale": 2.0}
+                "polygon_points": [p4, p3, p5, p6],
+                "random_params": {"mean": 30.0, "std": 3.0, "len_scale": [20, 2]}
             }
         ],
         n_particle_per_cell=2
     )
+    # mpm.add_particles_from_random_field(
+    #     polygons_params=[
+    #         {
+    #             "polygon_points": [s0, s1, s2, s3],
+    #             "random_params": {"mean": 15.0, "std": 3.0, "len_scale": 10.0},
+    #         },
+    #         {
+    #             "polygon_points": [s3, s2, s5, s4],
+    #             "random_params": {"mean": 30.0, "std": 3.0, "len_scale": 2.0}
+    #         }
+    #     ],
+    #     n_particle_per_cell=2
+    # )
     mpm.remove_overlapping_particles(overlap_tolerance=0.001)
     mpm.define_particle_entity()
 
@@ -88,40 +108,6 @@ def generate_input(save_dir, cfg):
             {"axis": "y", "bound_loc": "end", "sign_n": 1, "friction": 0.38},
             {"axis": "z", "bound_loc": "start", "sign_n": -1, "friction": 0.38},
             {"axis": "z", "bound_loc": "end", "sign_n": 1, "friction": 0.38}
-        ]
-    )
-    mpm.add_particle_constraints(
-        [
-            {
-                "pset_id": 0,
-                "axis": 'x',
-                "velocity": 0.0
-            },
-            {
-                "pset_id": 0,
-                "axis": 'y',
-                "velocity": 0.0
-            },
-            {
-                "pset_id": 1,
-                "axis": 'x',
-                "velocity": 10.0
-            },
-            {
-                "pset_id": 1,
-                "axis": 'y',
-                "velocity": 0.0
-            },
-            {
-                "pset_id": 2,
-                "axis": 'x',
-                "velocity": -10.0
-            },
-            {
-                "pset_id": 2,
-                "axis": 'y',
-                "velocity": 0.0
-            }
         ]
     )
 
@@ -166,7 +152,11 @@ def generate_input(save_dir, cfg):
     
     # Save mpm json that will be used after stress initialization only for first two timesteps
     mpm.mpm_json["analysis"]["nsteps"] = cfg.mpm_config.n_first_initial_timesteps
-    mpm.write(save_dir=save_dir, file_name='mpm-resume-initial-steps.json')
+    mpm.write(save_dir=save_dir, file_name='mpm-resume-initial-steps.json', save_options={
+        'mesh': False,
+        'particles': False,
+        'entity_sets': False,
+    })
 
     # mpm json for stress initialization
     mpm.mpm_json["mesh"].pop("particles_stresses")
@@ -178,7 +168,11 @@ def generate_input(save_dir, cfg):
     mpm.mpm_json["analysis"]["resume"]["uuid"] = "sand2d-le"
     mpm.mpm_json["analysis"]["nsteps"] = 70001
     # Overwrite
-    mpm.write(save_dir=save_dir, file_name='mpm-le.json')
+    mpm.write(save_dir=save_dir, file_name='mpm-le.json', save_options={
+        'mesh': False,
+        'particles': False,
+        'entity_sets': False,
+    })
 
     # vis_utils.plot_scatter(mpm.particle_groups, mpm.domain_ranges, f'{save_dir}/particle_config.png')
     vis_utils.plot_random_field_data(
