@@ -12,15 +12,15 @@ hydra:
 n_dims: 2
 n_material_props: 2
 max_cohesion: 100000
-n_samples: 10
-full_mpm_interval: 5
+n_samples: 1000
+full_mpm_interval: 10
 save_dir: ./data/sims/
 
 # MPM config
 mpm_config:
   dt: 1e-04
   initial_position_length: 6
-  n_full_mpm_timesteps: 3000
+  n_full_mpm_timesteps: 150000
   n_first_initial_timesteps: 376
   output_steps: 375
 
@@ -36,7 +36,7 @@ gns_config:
   model_path: ./data/gns/
   meta_data: metadata-r60.json
   model_file: model-4800000.pt
-  nsteps: 2
+  nsteps: 394
   physical_dt: 0.0375
 
 
