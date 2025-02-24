@@ -5,6 +5,8 @@ from cbgeopy.mpm import MPMConfig
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from cbgeopy import vis_utils
+import gstools as gs
+import numpy as np
 
 
 def generate_input(save_dir, cfg):
@@ -54,16 +56,24 @@ def generate_input(save_dir, cfg):
     p4 = [0, 24]
     p5 = [60, 44]
     p6 = [0, 44]
+    
+    # Custom correlation function
+    class single_exponential_correlation(gs.CovModel):
+        def cor(self, h):
+            """Custom correlation function using r and length scales lx, ly."""
+            return np.exp(-np.sqrt((2 * h) ** 2))
 
     mpm.add_particles_from_random_field(
         polygons_params=[
             {
                 "polygon_points": [p1, p2, p3, p4],
                 "random_params": {"mean": 15.0, "std": 3.0, "len_scale": [20, 2]},
+                "custom_correlation": single_exponential_correlation()
             },
             {
                 "polygon_points": [p4, p3, p5, p6],
-                "random_params": {"mean": 30.0, "std": 3.0, "len_scale": [20, 2]}
+                "random_params": {"mean": 30.0, "std": 3.0, "len_scale": [20, 2]},
+                "custom_correlation": single_exponential_correlation()
             }
         ],
         n_particle_per_cell=2
