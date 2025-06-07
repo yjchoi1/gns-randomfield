@@ -57,22 +57,24 @@ class PostProcesser:
 
         # Plot GNS results
         ax1.scatter(gns_final_positions[:, 0], gns_final_positions[:, 1],
-                    s=10, alpha=0.6, label='GNS')
+                    s=1, label='GNS')
         ax1.set_title('GNS Final Deposit')
         ax1.set_xlabel('x')
         ax1.set_ylabel('y')
         ax1.grid(True, alpha=0.3)
+        ax1.set_aspect('equal')
         ax1.legend()
 
         # Plot MPM results if available
         if self.mpm_data is not None:
             mpm_final_positions = self.mpm_data[0][0][-1, :, :]
             ax2.scatter(mpm_final_positions[:, 0], mpm_final_positions[:, 1],
-                        s=10, alpha=0.6, label='MPM')
+                        s=1, label='MPM')
             ax2.set_title('MPM Final Deposit')
             ax2.set_xlabel('x')
             ax2.set_ylabel('y')
             ax2.grid(True, alpha=0.3)
+            ax2.set_aspect('equal')
             ax2.legend()
 
         # Set domain limits if provided
@@ -85,4 +87,4 @@ class PostProcesser:
 
         # Adjust layout to prevent overlap
         plt.tight_layout()
-        plt.savefig(f"{save_dir}/final_deposit.png")
+        plt.savefig(f"{save_dir}/final_deposit.png", dpi=600)
