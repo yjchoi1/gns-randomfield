@@ -10,18 +10,20 @@ hydra:
 
 # Top level config
 n_dims: 2
+domain: [[0.0, 480.0], [0.0, 120]]
 n_material_props: 2
 max_cohesion: 100000
-n_samples: 1000
-full_mpm_interval: 10
-save_dir: ./data/sims/
+sim_id_range: [0, 100]
+full_mpm_interval: 1
+save_dir: /scratch1/08264/baagee/gns-randomfield/case-4/
 
 # MPM config
 mpm_config:
+  input_generator_module_name: genenrate_input_case4
   dt: 1e-04
   initial_position_length: 6
-  n_full_mpm_timesteps: 150000
-  n_first_initial_timesteps: 376
+  n_full_mpm_timesteps: 225000
+  n_first_initial_timesteps: 2251
   output_steps: 375
 
 # GNS config
@@ -31,12 +33,12 @@ gns_config:
   kinematic_particle: 6
   stationary_particle: 3
   num_particle_types: 9
-  noise_std: 0.01
-  data_path: ./data/gns/
-  model_path: ./data/gns/
+  noise_std: 6.7e-2
+  data_path: /work/08264/baagee/frontera/gns-randomfield/data/gns/sand2d-landslide2-r60-fix-mp-base-c/
+  model_path: /work/08264/baagee/frontera/gns-randomfield/data/gns/sand2d-landslide2-r60-fix-mp-base-c/
   meta_data: metadata-r60.json
   model_file: model-4800000.pt
-  nsteps: 394
+  nsteps: 594
   physical_dt: 0.0375
 
 
