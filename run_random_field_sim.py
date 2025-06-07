@@ -1,5 +1,7 @@
 import sys
 import os
+import shutil
+import importlib
 
 # Add both submodules and their parent directory to path
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -16,7 +18,6 @@ import glob
 import torch
 import hydra
 from omegaconf import DictConfig, OmegaConf
-import genenrate_input
 import run_mpm
 import pickle
 
@@ -40,7 +41,7 @@ def main(cfg):
     
     results = []
     
-    for i in np.arange(0, cfg.n_samples):
+    for i in np.arange(cfg.sim_id_range[0], cfg.sim_id_range[1]):
         result = {}
         
         # Set simulation directory
@@ -50,10 +51,19 @@ def main(cfg):
         # Create save directory if it doesn't exist
         if not os.path.exists(sim_dir):
             os.makedirs(sim_dir)
+
+        # Save config
+        OmegaConf.save(cfg, f'{cfg.save_dir}/config.yaml')
         
         # Generate random field input
-        genenrate_input.generate_input(sim_dir, cfg)
-    
+        input_generator = importlib.import_module(cfg.mpm_config.input_generator_module_name)
+        input_generator.generate_input(sim_dir, cfg)
+
+        # Save input generator used
+        module_file = input_generator.__file__
+        module_filename = os.path.basename(module_file)
+        shutil.copy2(module_file, f'{cfg.save_dir}/{module_filename}')
+
         # Run MPM for entire simulation if `i` is at specifed index
         if i % cfg.full_mpm_interval == 0:
             run_mpm.run_mpm(cfg, sim_dir, 'mpm-resume-full.json')
@@ -69,11 +79,11 @@ def main(cfg):
                 use_material_feature=True,
                 scale={"origin": [0, 0], "factor": [1.0, 1.0], "timestep_stride": int(1)},
                 max_time=cfg.mpm_config.n_full_mpm_timesteps)
-            
+
         # Run MPM for first few initial steps if `i` is not at specifed index
         else:
             run_mpm.run_mpm(cfg, sim_dir, 'mpm-resume-initial-steps.json')
-            
+
             # Convert h5 to npz for the first few initial steps
             convert_hd5_to_npz(
                 n_dims=cfg.n_dims,
@@ -85,6 +95,9 @@ def main(cfg):
                 use_material_feature=True,
                 scale={"origin": [0, 0], "factor": [1.0, 1.0], "timestep_stride": int(1)},
                 max_time=cfg.mpm_config.n_first_initial_timesteps)
+
+        # Remove the mpm simulation results to prevent excessive storage usage
+        shutil.rmtree(f'{sim_dir}/results/sand2d/')
             
         # Make x0
         npz_name = "trajectory_mpm_full.npz" if i % cfg.full_mpm_interval == 0 else "trajectory_mpm_initial_steps.npz"
@@ -109,7 +122,7 @@ def main(cfg):
         )
         runout_gns, runout_mpm = postprocesser.compute_runout()
         mse = postprocesser.compute_mse()
-        postprocesser.plot_deposit(save_dir=sim_dir, domain=[[0, 200], [0, 80]])
+        postprocesser.plot_deposit(save_dir=sim_dir, domain=cfg.domain)
         
         # Save the results
         result["gns"] = {"runout": runout_gns}
@@ -117,11 +130,11 @@ def main(cfg):
         result["mse"] = mse
         
         # Append the result to the results list
-        results.append(result)
+        # results.append(result)
         
-    # Save the results
-    with open(f'{cfg.save_dir}/results.pkl', 'wb') as f:
-        pickle.dump(results, f)
+    # # Save the results
+    # with open(f'{cfg.save_dir}/results.pkl', 'wb') as f:
+    #     pickle.dump(results, f)
 
 
 if __name__ == "__main__":
