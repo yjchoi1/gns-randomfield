@@ -100,33 +100,18 @@ def prepare_x0(
     if mpm is not None and hasattr(mpm, "particle_groups"):
         n_particles = mpm_trajectory[0][1].shape[0]
         max_cohesion = cfg.max_cohesion
-        default_cohesion = cfg.devault_cohesion
+        default_cohesion = cfg.default_cohesion
         # two columns: [tan(friction), cohesion_normalized]
         material_feature = np.zeros((n_particles, 2), dtype=np.float32)
 
         for group_id, group in mpm.particle_groups.items():
             ids = np.asarray(group.get("id", []), dtype=int)
-            if ids.size == 0:
-                continue
-
             if int(group_id) == 0:
                 phi_deg = np.full(ids.size, LINEAR_ELASTIC_FEATURE_DEG, dtype=np.float32)
                 coh_raw = np.full(ids.size, max_cohesion, dtype=np.float32)
             else:
                 phi_deg = np.asarray(group.get("field_values", []), dtype=np.float32)
-                if phi_deg.shape[0] != ids.shape[0]:
-                    n = min(phi_deg.shape[0], ids.shape[0])
-                    ids = ids[:n]
-                    phi_deg = phi_deg[:n]
                 coh_raw = np.full(ids.size, default_cohesion, dtype=np.float32)
-
-            # Shift to 0-based if needed and mask to bounds
-            if ids.max() >= n_particles:
-                ids = ids - 1
-            mask = (ids >= 0) & (ids < n_particles)
-            ids = ids[mask]
-            phi_deg = phi_deg[mask]
-            coh_raw = coh_raw[mask]
 
             material_feature[ids, 0] = np.tan(np.deg2rad(phi_deg))
             material_feature[ids, 1] = coh_raw / max_cohesion
