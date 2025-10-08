@@ -6,6 +6,8 @@ import glob
 from gns import reading_utils
 from gns import particle_data_loader
 
+LINEAR_ELASTIC_FEATURE_DEG = 45.0
+COHESION_DEFAULT = 1000
 
 def prepare_x0(
     cfg,
@@ -13,6 +15,7 @@ def prepare_x0(
     npz_path: str,
     material_params: torch.Tensor,
     device: torch.device,
+    mpm=None,
 ):
     """Prepare initial features (X0) for rollout on torch device.
 
@@ -92,9 +95,49 @@ def prepare_x0(
     particle_types = torch.tensor(
         mpm_trajectory[0][1], device=device, dtype=torch.long
         ).contiguous()
-    material_properties = torch.tensor(
-        mpm_trajectory[0][2], device=device, dtype=torch.float32
+
+    # If mpm is provided, build material_properties from mpm.particle_groups
+    if mpm is not None and hasattr(mpm, "particle_groups"):
+        n_particles = mpm_trajectory[0][1].shape[0]
+        max_cohesion = cfg.max_cohesion
+        default_cohesion = cfg.devault_cohesion
+        # two columns: [tan(friction), cohesion_normalized]
+        material_feature = np.zeros((n_particles, 2), dtype=np.float32)
+
+        for group_id, group in mpm.particle_groups.items():
+            ids = np.asarray(group.get("id", []), dtype=int)
+            if ids.size == 0:
+                continue
+
+            if int(group_id) == 0:
+                phi_deg = np.full(ids.size, LINEAR_ELASTIC_FEATURE_DEG, dtype=np.float32)
+                coh_raw = np.full(ids.size, max_cohesion, dtype=np.float32)
+            else:
+                phi_deg = np.asarray(group.get("field_values", []), dtype=np.float32)
+                if phi_deg.shape[0] != ids.shape[0]:
+                    n = min(phi_deg.shape[0], ids.shape[0])
+                    ids = ids[:n]
+                    phi_deg = phi_deg[:n]
+                coh_raw = np.full(ids.size, default_cohesion, dtype=np.float32)
+
+            # Shift to 0-based if needed and mask to bounds
+            if ids.max() >= n_particles:
+                ids = ids - 1
+            mask = (ids >= 0) & (ids < n_particles)
+            ids = ids[mask]
+            phi_deg = phi_deg[mask]
+            coh_raw = coh_raw[mask]
+
+            material_feature[ids, 0] = np.tan(np.deg2rad(phi_deg))
+            material_feature[ids, 1] = coh_raw / max_cohesion
+
+        material_properties = torch.tensor(
+            material_feature, device=device, dtype=torch.float32
         ).contiguous()
+    else:
+        material_properties = torch.tensor(
+            mpm_trajectory[0][2], device=device, dtype=torch.float32
+            ).contiguous()
 
     # Get number of particles per example (we only consider one example)
     n_particles_per_example = torch.tensor(
